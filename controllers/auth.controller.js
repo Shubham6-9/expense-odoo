@@ -1,13 +1,23 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import CompanyAdmin from "../models/companyAdmin.model.js";
+import User from "../models/User.js";
+import Company from "../models/Company.js";
 
 // ===== Signup Controller =====
 export const signupAdmin = async (req, res) => {
   try {
-    const { name, email, password, countryCode, currencyCode, currencySign } = req.body;
+    const { name, email, password, countryCode, currencyCode, currencySign } =
+      req.body;
 
-    if (!name || !email || !password || !countryCode || !currencyCode || !currencySign) {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !countryCode ||
+      !currencyCode ||
+      !currencySign
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -31,7 +41,26 @@ export const signupAdmin = async (req, res) => {
 
     await newAdmin.save();
 
-    res.status(201).json({ message: "Admin registered successfully" });
+    // Create a Company record for this admin
+    const newCompany = new Company({
+      name: `${name}'s Company`,
+      admin: newAdmin._id,
+      countryCode,
+      currencyCode,
+      currencySign,
+    });
+
+    await newCompany.save();
+
+    res.status(201).json({
+      message: "Admin registered successfully",
+      admin: {
+        id: newAdmin._id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        companyId: newCompany._id,
+      },
+    });
   } catch (error) {
     console.error("Signup Error:", error);
     res.status(500).json({ message: "Server Error" });
@@ -85,8 +114,10 @@ export const loginAdmin = async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     // req.adminId is set by verifyToken middleware
-    const admin = await CompanyAdmin.findById(req.adminId).select("-passwordHash");
-    
+    const admin = await CompanyAdmin.findById(req.adminId).select(
+      "-passwordHash"
+    );
+
     if (!admin) {
       return res.status(404).json({ message: "Admin not found" });
     }
@@ -106,6 +137,50 @@ export const getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Profile Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// ===== User Login Controller =====
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and Password required" });
+    }
+
+    const user = await User.findOne({ email }).populate("company");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        company: user.company,
+        manager: user.manager,
+        mustChangePassword: user.mustChangePassword,
+      },
+    });
+  } catch (error) {
+    console.error("User Login Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };

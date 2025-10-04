@@ -1,18 +1,19 @@
 import CompanyAdmin from "../models/companyAdmin.model.js";
+import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
 // Middleware to check if at least one user exists before allowing login
 export const checkUserExists = async (req, res, next) => {
   try {
     const userCount = await CompanyAdmin.countDocuments();
-    
+
     if (userCount === 0) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: "No users registered. Please sign up first.",
-        redirectTo: "/signup"
+        redirectTo: "/signup",
       });
     }
-    
+
     next();
   } catch (error) {
     console.error("Check User Exists Error:", error);
@@ -21,20 +22,44 @@ export const checkUserExists = async (req, res, next) => {
 };
 // Add to auth.middleware.js
 export const verifyToken = async (req, res, next) => {
-    try {
-      const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
-      
-      if (!token) {
-        return res.status(401).json({ message: "No token provided" });
-      }
-  
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.adminId = decoded.id;
-      req.adminEmail = decoded.email;
-      
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+  try {
+    const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
     }
-  };
-export default {checkUserExists , verifyToken};
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.adminId = decoded.id;
+    req.adminEmail = decoded.email;
+
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+// Middleware for user authentication (for regular users, not admins)
+export const verifyUserToken = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).populate("company");
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+// Default export for backward compatibility
+export default { checkUserExists, verifyToken, verifyUserToken };
