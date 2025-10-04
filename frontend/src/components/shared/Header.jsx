@@ -1,13 +1,13 @@
 import React from 'react'
 import ToggleDarkMode from '../ToggleDarkMode'
-import { useLocation } from 'react-router-dom'
-import { 
-    FaHome, 
-    FaUser, 
-    FaCog, 
-    FaChartBar, 
-    FaBell, 
-    FaEnvelope, 
+import { useLocation, useNavigate } from 'react-router-dom'
+import {
+    FaHome,
+    FaUser,
+    FaCog,
+    FaChartBar,
+    FaBell,
+    FaEnvelope,
     FaSearch,
     FaBars,
     FaTimes
@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Header() {
     const location = useLocation()
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+    const navigate = useNavigate()
 
     // Function to get page title and icon based on route
     const getPageInfo = () => {
@@ -33,11 +33,11 @@ export default function Header() {
             'notifications': { title: 'Notifications', icon: FaBell }
         }
 
-        const pageInfo = pageTitles[path] || { 
-            title: path.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '), 
+        const pageInfo = pageTitles[path] || {
+            title: path.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
             icon: FaHome
         }
-        
+
         return {
             title: pageInfo.title,
             icon: pageInfo.icon,
@@ -51,9 +51,8 @@ export default function Header() {
     return (
         <>
             <header className="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        {/* Left Section - Page Title */}
                         <div className="flex items-center space-x-4">
                             <motion.div
                                 initial={{ opacity: 0, x: -20 }}
@@ -75,15 +74,13 @@ export default function Header() {
                             </motion.div>
                         </div>
 
-                        {/* Right Section - Search, Icons, and Controls */}
                         <div className="flex items-center space-x-4">
-                            {/* Icons Group */}
                             <div className="flex items-center space-x-3">
-                                {/* Notifications */}
                                 <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors duration-200"
+                                    onClick={() => navigate('/pending')}
                                 >
                                     <FaBell className="h-5 w-5" />
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -91,7 +88,6 @@ export default function Header() {
                                     </span>
                                 </motion.button>
 
-                                {/* Dark Mode Toggle */}
                                 <motion.div
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
@@ -99,7 +95,6 @@ export default function Header() {
                                     <ToggleDarkMode />
                                 </motion.div>
 
-                                {/* User Profile */}
                                 <motion.div
                                     whileHover={{ scale: 1.05 }}
                                     className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200"
@@ -116,20 +111,6 @@ export default function Header() {
                                         </p>
                                     </div>
                                 </motion.div>
-
-                                {/* Mobile Menu Button */}
-                                <motion.button
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                    className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors duration-200"
-                                >
-                                    {isMobileMenuOpen ? (
-                                        <FaTimes className="h-5 w-5" />
-                                    ) : (
-                                        <FaBars className="h-5 w-5" />
-                                    )}
-                                </motion.button>
                             </div>
                         </div>
                     </div>

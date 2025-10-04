@@ -1,7 +1,12 @@
 import React from 'react'
+import Layout from '../Layout'
 
 export default function ManageUsers() {
-  return (
-    <div>ManageUsers</div>
-  )
+    return (
+        <>
+            <Layout>
+                <div>ManageUsers</div>
+            </Layout>
+        </>
+    )
 }

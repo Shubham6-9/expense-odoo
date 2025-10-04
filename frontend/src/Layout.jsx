@@ -6,7 +6,7 @@ export default function Layout({ children }) {
     return (
         <>
             <Header />
-            <div className='flex justify-between'>
+            <div className='flex'>
                 <div>
                     <Sidebar />
                 </div>

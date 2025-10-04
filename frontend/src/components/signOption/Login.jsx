@@ -4,12 +4,13 @@ import Swal from 'sweetalert2'
 import { motion } from 'framer-motion'
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaUserShield, FaUserTie, FaUser } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { baseUrl } from '../../baseUrl'
 
 export default function Login() {
     const [userData, setUserData] = useState({
         email: '',
         password: '',
-        role: 'admin'
     })
     const [userDataError, setUserDataError] = useState({
         emailErr: '',
@@ -18,6 +19,7 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false)
     const [isFormValid, setIsFormValid] = useState(false)
     const [remember, setRemember] = useState(false)
+    const [submitLoading, setSubmitLoading] = useState(false)
 
     const navigate = useNavigate()
 
@@ -77,65 +79,57 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
+        setSubmitLoading(true)
         if (!isFormValid) {
             toast.error('Please fix the errors before submitting')
+            setSubmitLoading(false)
             return
         }
 
-        let count = 2
-        Swal.fire({
-            icon: 'success',
-            title: `Welcome back, ${getRoleDisplayName(userData.role)}!`,
-            html: `Login successful. Redirecting to ${getRoleDashboard(userData.role)} in <strong>${count}</strong> seconds...`,
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'rounded-lg',
-                title: 'text-xl font-semibold'
-            },
-            didOpen: () => {
-                const timer = setInterval(() => {
-                    count -= 1
-                    if (count <= 0) {
-                        clearInterval(timer)
-                        Swal.close()
-                    } else {
-                        Swal.getHtmlContainer().innerHTML =
-                            `Login successful. Redirecting to ${getRoleDashboard(userData.role)} in <strong>${count}</strong> seconds...`
-                    }
-                }, 1000)
+        const data = {
+            email: userData.email,
+            password: userData.password,
+        }
+
+        await axios.post(`${baseUrl}/api/auth/login`, data, {
+            headers: {
+                'Content-Type': 'application/json'
             }
         })
-        setTimeout(() => {
-            navigate("/dashboard")
-        }, 3100)
-    }
-
-    const getRoleDisplayName = (role) => {
-        const roles = {
-            'admin': 'Administrator',
-            'approver': 'Manager',
-            'employee': 'Employee'
-        }
-        return roles[role] || role
-    }
-
-    const getRoleDashboard = (role) => {
-        const dashboards = {
-            'admin': 'Admin Dashboard',
-            'approver': 'Manager Dashboard',
-            'employee': 'Employee Portal'
-        }
-        return dashboards[role] || 'Dashboard'
-    }
-
-    const getRoleIcon = (role) => {
-        const icons = {
-            'admin': FaUserShield,
-            'approver': FaUserTie,
-            'employee': FaUser
-        }
-        return icons[role] || FaUser
+            .then(data => {
+                let count = 2
+                Swal.fire({
+                    icon: 'success',
+                    title: `Welcome back!`,
+                    html: `Login successful. Redirecting to Dashboard in <strong>${count}</strong> seconds...`,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'rounded-lg',
+                        title: 'text-xl font-semibold'
+                    },
+                    didOpen: () => {
+                        const timer = setInterval(() => {
+                            count -= 1
+                            if (count <= 0) {
+                                clearInterval(timer)
+                                Swal.close()
+                            } else {
+                                Swal.getHtmlContainer().innerHTML =
+                                    `Login successful. Redirecting to Dashboard in <strong>${count}</strong> seconds...`
+                            }
+                        }, 1000)
+                    }
+                })
+                setTimeout(() => {
+                    navigate("/dashboard");
+                }, 3100)
+            }).catch((err) => {
+                setSubmitLoading(false)
+                let errMessage = err.response.data.message;
+                toast.error(errMessage)
+                console.log(err.response.data);
+            })
     }
 
     const getInputClassName = (hasError) =>
@@ -170,55 +164,6 @@ export default function Login() {
                     </motion.div>
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                        <motion.div variants={itemVariants}>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Login As
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {React.createElement(getRoleIcon(userData.role), {
-                                        className: "h-5 w-5 text-gray-400"
-                                    })}
-                                </div>
-                                <select
-                                    value={userData.role}
-                                    onChange={e => setUserData({ ...userData, role: e.target.value })}
-                                    className={getSelectClassName()}
-                                    autoFocus
-                                >
-                                    <option value='admin'>Administrator</option>
-                                    <option value='approver'>Manager/Approver</option>
-                                    <option value='employee'>Employee</option>
-                                </select>
-                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                transition={{ duration: 0.3 }}
-                                className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
-                            >
-                                <div className="text-sm text-blue-800">
-                                    <div className="flex items-center space-x-2">
-                                        {React.createElement(getRoleIcon(userData.role), {
-                                            className: "h-4 w-4"
-                                        })}
-                                        <span className="font-medium">{getRoleDisplayName(userData.role)} Access</span>
-                                    </div>
-                                    <p className="mt-1 text-xs">
-                                        {userData.role === 'admin' && 'Full system access with administrative privileges'}
-                                        {userData.role === 'approver' && 'Manager-level access for approvals and team management'}
-                                        {userData.role === 'employee' && 'Employee access with personalized dashboard'}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-
                         <motion.div variants={itemVariants}>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Email Address
