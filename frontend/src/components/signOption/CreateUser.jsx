@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast, { LoaderIcon } from 'react-hot-toast'
 import Swal from 'sweetalert2'
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaBuilding, FaCheckCircle, FaGlobe, FaChevronDown } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { baseUrl } from '../../baseUrl'
 
-export default function CreateUser() {
+export default function CreateUser({ loginRedirect }) {
     const [userData, setUserData] = useState({
         name: '',
         email: '',
@@ -29,8 +31,7 @@ export default function CreateUser() {
     const [countries, setCountries] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-
-    const navigate = useNavigate()
+    const [submitLoading, setSubmitLoading] = useState(false)
 
     useEffect(() => {
         const fetchCountries = async () => {
@@ -38,12 +39,12 @@ export default function CreateUser() {
                 setIsLoading(true)
                 const response = await fetch('https://restcountries.com/v3.1/all?fields=name,currencies,cca2')
                 const data = await response.json()
-                
+
                 const transformedCountries = data
                     .map(country => {
                         const currencyKey = Object.keys(country.currencies || {})[0]
                         const currency = currencyKey ? country.currencies[currencyKey] : null
-                        
+
                         return {
                             name: country.name.common,
                             countryCode: country.cca2,
@@ -54,7 +55,7 @@ export default function CreateUser() {
                     })
                     .filter(country => country.currencyCode && country.currencySign)
                     .sort((a, b) => a.name.localeCompare(b.name))
-                
+
                 setCountries(transformedCountries)
             } catch (error) {
                 console.error('Error fetching countries:', error)
@@ -114,9 +115,9 @@ export default function CreateUser() {
         })
 
         setIsFormValid(
-            nameErr === '' && 
-            emailErr === '' && 
-            passErr === '' && 
+            nameErr === '' &&
+            emailErr === '' &&
+            passErr === '' &&
             passMatch === '' &&
             countryErr === '' &&
             userData.name.trim() !== '' &&
@@ -140,59 +141,82 @@ export default function CreateUser() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        
+
+        setSubmitLoading(true)
         if (!isFormValid) {
             toast.error('Please fix the errors before submitting')
+            setSubmitLoading(false)
             return
         }
 
-        console.log('User data submitted:', {
-            ...userData,
-            password: '***',
-            confirmPassword: '***',
-        })
+        const data = {
+            name: userData.name,
+            email: userData.email,
+            password: userData.password,
+            countryCode: userData.countryCode,
+            currencyCode: userData.currencyCode,
+            currencySign: userData.currencySign,
+            role: userData.role
+        }
 
-        let count = 3
-        Swal.fire({
-            icon: 'success',
-            title: 'Account Created Successfully!',
-            html: `Account Created for ${userData.name} in ${userData.country}. Redirecting to Dashboard in <strong>${count}</strong> seconds...`,
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            customClass: {
-                popup: 'rounded-lg',
-                title: 'text-xl font-semibold'
-            },
-            didOpen: () => {
-                const timer = setInterval(() => {
-                    count -= 1
-                    if (count <= 0) {
-                        clearInterval(timer)
-                        Swal.close()
-                    } else {
-                        Swal.getHtmlContainer().innerHTML = 
-                            `Account Created for ${userData.name} in ${userData.country}. Redirecting to Dashboard in <strong>${count}</strong> seconds...`
-                    }
-                }, 1000)
+        await axios.post(`${baseUrl}/api/auth/signup`, data, {
+            headers: {
+                'Content-Type': 'application/json'
             }
         })
-        setTimeout(()=>{
-            navigate('/dashboard')
-        }, 3100)
+            .then(data => {
+                console.log('User data submitted:', {
+                    ...userData,
+                    password: '***',
+                    confirmPassword: '***',
+                })
+
+                let count = 3
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Account Created Successfully!',
+                    html: `Account Created for ${userData.name} in ${userData.country}. Redirecting to Login in <strong>${count}</strong> seconds...`,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'rounded-lg',
+                        title: 'text-xl font-semibold'
+                    },
+                    didOpen: () => {
+                        const timer = setInterval(() => {
+                            count -= 1
+                            if (count <= 0) {
+                                clearInterval(timer)
+                                Swal.close()
+                            } else {
+                                Swal.getHtmlContainer().innerHTML =
+                                    `Account Created for ${userData.name} in ${userData.country}. Redirecting to Login in <strong>${count}</strong> seconds...`
+                            }
+                        }, 1000)
+                    }
+                })
+                setTimeout(() => {
+                    loginRedirect();
+                }, 3100)
+            })
+            .catch((err) => {
+                setSubmitLoading(false)
+                let errMessage = err.response.data.message;
+                toast.error(errMessage)
+                console.log(err.response)
+            })
     }
 
-    const getInputClassName = (hasError) => 
-        `w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${
-            hasError 
-                ? 'border-red-500 focus:ring-red-200 bg-red-50' 
-                : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
+    const getInputClassName = (hasError) =>
+        `w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${hasError
+            ? 'border-red-500 focus:ring-red-200 bg-red-50'
+            : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
         }`
 
-    const getDropdownClassName = (hasError) => 
-        `w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-left cursor-pointer ${
-            hasError 
-                ? 'border-red-500 focus:ring-red-200 bg-red-50' 
-                : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
+    const getDropdownClassName = (hasError) =>
+        `w-full px-4 py-3 pl-12 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-left cursor-pointer ${hasError
+            ? 'border-red-500 focus:ring-red-200 bg-red-50'
+            : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
         }`
 
     return (
@@ -220,7 +244,7 @@ export default function CreateUser() {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <FaUser className={`h-5 w-5 ${userDataError.nameErr ? 'text-red-400' : 'text-gray-400'}`} />
                             </div>
-                            <input 
+                            <input
                                 type="text"
                                 value={userData.name}
                                 onChange={e => setUserData({ ...userData, name: e.target.value })}
@@ -246,7 +270,7 @@ export default function CreateUser() {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <FaEnvelope className={`h-5 w-5 ${userDataError.emailErr ? 'text-red-400' : 'text-gray-400'}`} />
                             </div>
-                            <input 
+                            <input
                                 type="email"
                                 value={userData.email}
                                 onChange={e => setUserData({ ...userData, email: e.target.value })}
@@ -283,7 +307,7 @@ export default function CreateUser() {
                                     <FaChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                                 </div>
                             </button>
-                            
+
                             {/* Country Dropdown */}
                             {isDropdownOpen && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -320,7 +344,7 @@ export default function CreateUser() {
                                 {userDataError.countryErr}
                             </p>
                         )}
-                        
+
                         {/* Selected Country Info */}
                         {userData.country && (
                             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -353,7 +377,7 @@ export default function CreateUser() {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <FaLock className={`h-5 w-5 ${userDataError.passErr ? 'text-red-400' : 'text-gray-400'}`} />
                             </div>
-                            <input 
+                            <input
                                 type={showPassword ? "text" : "password"}
                                 value={userData.password}
                                 onChange={e => setUserData({ ...userData, password: e.target.value })}
@@ -389,7 +413,7 @@ export default function CreateUser() {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <FaLock className={`h-5 w-5 ${userDataError.passMatch ? 'text-red-400' : 'text-gray-400'}`} />
                             </div>
-                            <input 
+                            <input
                                 type={showConfirmPassword ? "text" : "password"}
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
@@ -417,20 +441,30 @@ export default function CreateUser() {
                     </div>
 
                     {/* Submit Button */}
-                    <button
-                        type="submit"
-                        disabled={!isFormValid}
-                        className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${
-                            isFormValid
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500 transform hover:scale-[1.02]'
-                                : 'bg-gray-400 cursor-not-allowed'
-                        }`}
-                    >
-                        <div className="flex items-center justify-center space-x-2">
-                            <FaCheckCircle className="h-5 w-5" />
-                            <span>Create Account</span>
-                        </div>
-                    </button>
+                    {
+                        submitLoading ? <button
+                            type="button"
+                            disabled={true}
+                            className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500 transform hover:scale-[1.02]`}
+                        >
+                            <div className="flex items-center justify-center">
+                                <LoaderIcon className="h-5 w-5 animate-spin" />
+                            </div>
+                        </button>
+                            : <button
+                                type="submit"
+                                disabled={!isFormValid}
+                                className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${isFormValid
+                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500 transform hover:scale-[1.02]'
+                                    : 'bg-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                <div className="flex items-center justify-center space-x-2">
+                                    <FaCheckCircle className="h-5 w-5" />
+                                    <span>Create Account</span>
+                                </div>
+                            </button>
+                    }
                 </form>
 
                 {/* Footer */}

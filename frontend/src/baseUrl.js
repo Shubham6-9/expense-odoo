@@ -1,0 +1,1 @@
+export const baseUrl = 'https://expense-odoo.onrender.com'

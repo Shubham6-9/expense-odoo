@@ -132,7 +132,7 @@ export default function SignOptions() {
                             variants={pageVariants}
                             transition={pageTransition}
                         >
-                            {signType === 'login' ? <Login /> : <CreateUser />}
+                            {signType === 'login' ? <Login /> : <CreateUser loginRedirect={() => setSignType('login')} />}
                         </motion.div>
                     </AnimatePresence>
 
