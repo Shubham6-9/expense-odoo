@@ -196,8 +196,8 @@ export default function CreateUser() {
         }`
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="min-h-screen flex justify-center p-2">
+            <div className="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
                     <div className="flex items-center justify-center space-x-3 mb-2">
@@ -226,6 +226,7 @@ export default function CreateUser() {
                                 onChange={e => setUserData({ ...userData, name: e.target.value })}
                                 className={getInputClassName(userDataError.nameErr)}
                                 placeholder="Enter your full name"
+                                autoFocus
                             />
                         </div>
                         {userDataError.nameErr && (
