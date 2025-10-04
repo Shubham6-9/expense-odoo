@@ -26,6 +26,7 @@ export const signupAdmin = async (req, res) => {
       countryCode,
       currencyCode,
       currencySign,
+      role: "admin",
     });
 
     await newAdmin.save();
