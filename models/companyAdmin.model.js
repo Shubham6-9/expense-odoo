@@ -32,7 +32,8 @@ const companyAdminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    required : true,
+    required: true,
+    default: "admin",
   },
 }, { timestamps: true });
 
