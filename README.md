@@ -50,10 +50,15 @@ A Node.js/Express API for expense management with user authentication and compan
 - `POST /api/users/admin-create` - Company admin creates user
 - `POST /api/users/` - User admin creates user (requires user auth)
 
+### Dashboard Endpoints
+
+- `GET /api/dashboard/admin` - Get admin dashboard (admin auth required)
+- `GET /api/dashboard/user` - Get user dashboard (user auth required)
+- `GET /api/dashboard/` - Auto-detect dashboard type (legacy)
+
 ### Other Endpoints
 
 - `GET /api/approval-rules/` - List approval rules
-- `GET /api/dashboard/` - Get dashboard data (protected)
 
 ## Testing Create User Functionality
 
@@ -112,6 +117,20 @@ curl -X POST http://localhost:5000/api/users/admin-create \
   }'
 ```
 
+### 4. Get Admin Dashboard
+
+```bash
+curl -X GET http://localhost:5000/api/dashboard/admin \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+### 5. Get User Dashboard
+
+```bash
+curl -X GET http://localhost:5000/api/dashboard/user \
+  -H "Authorization: Bearer YOUR_USER_TOKEN"
+```
+
 ## Project Structure
 
 ```
@@ -136,6 +155,84 @@ curl -X POST http://localhost:5000/api/users/admin-create \
 └── server.js                # Main server file
 ```
 
+## Dashboard API Details
+
+### Admin Dashboard (`GET /api/dashboard/admin`)
+
+Returns comprehensive data for company admins including:
+
+**Response Structure:**
+
+```json
+{
+  "message": "Admin dashboard data retrieved successfully",
+  "data": {
+    "admin": {
+      "id": "admin_id",
+      "name": "Admin Name",
+      "email": "admin@company.com",
+      "countryCode": "US",
+      "currencyCode": "USD",
+      "currencySign": "$",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "company": {
+      "id": "company_id",
+      "name": "Company Name",
+      "countryCode": "US",
+      "currencyCode": "USD",
+      "currencySign": "$",
+      "isActive": true,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    "statistics": {
+      "users": {
+        "total": 10,
+        "byRole": {
+          "Admin": 1,
+          "Manager": 2,
+          "Employee": 7
+        },
+        "newThisMonth": 3,
+        "pendingPasswordChange": 2
+      },
+      "expenses": {
+        "total": 25,
+        "recent": [...]
+      },
+      "approvalRules": 3
+    },
+    "users": {
+      "all": [...],
+      "recent": [...]
+    }
+  }
+}
+```
+
+### User Dashboard (`GET /api/dashboard/user`)
+
+Returns role-specific data for regular users:
+
+**For Employees:**
+
+- Personal expense data
+- Expense statistics (pending, approved, rejected)
+
+**For Managers:**
+
+- Team members
+- Pending approvals
+- Team expenses
+- Team statistics
+
+**For User Admins:**
+
+- All company users
+- All company expenses
+- Approval rules
+- User statistics
+
 ## Features
 
 - ✅ Company admin registration and authentication
@@ -145,6 +242,8 @@ curl -X POST http://localhost:5000/api/users/admin-create \
 - ✅ JWT-based authentication
 - ✅ MongoDB integration
 - ✅ Input validation and error handling
+- ✅ Comprehensive dashboard API with admin and user views
+- ✅ User statistics and company analytics
 
 ## Notes
 
