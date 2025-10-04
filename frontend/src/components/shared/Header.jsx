@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import ToggleDarkMode from '../ToggleDarkMode'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -17,6 +17,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function Header() {
     const location = useLocation()
     const navigate = useNavigate()
+    const [naam, setNaam] = useState('')
+    const [mail, setMail] = useState('')
+
+    useEffect(()=>{
+        const admin = sessionStorage.getItem('adminName')
+        const mailC = sessionStorage.getItem('adminEmail')
+        setNaam(admin)
+        setMail(mailC)
+    })
 
     // Function to get page title and icon based on route
     const getPageInfo = () => {
@@ -104,10 +113,10 @@ export default function Header() {
                                     </div>
                                     <div className="hidden lg:block text-left">
                                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                            John Doe
+                                            {naam}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            Administrator
+                                            {mail}
                                         </p>
                                     </div>
                                 </motion.div>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import toast, { LoaderIcon } from 'react-hot-toast'
 import Swal from 'sweetalert2'
 import { motion } from 'framer-motion'
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaUserShield, FaUserTie, FaUser } from 'react-icons/fa'
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaSignInAlt, FaUserShield, FaUserTie, FaUser, FaCheckCircle } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { baseUrl } from '../../baseUrl'
@@ -89,18 +89,31 @@ export default function Login() {
         const data = {
             email: userData.email,
             password: userData.password,
+            role: 'admin'
         }
 
-        await axios.post(`${baseUrl}/api/auth/login`, data, {
+        await axios.post(`${baseUrl}/api/auth/admin/login`, data, {
             headers: {
                 'Content-Type': 'application/json'
             }
         })
-            .then(data => {
+            .then(response => {
+                console.log(response);
+
+                // Store token and admin data in session storage
+                const { token, admin } = response.data;
+
+                sessionStorage.setItem('token', token);
+                sessionStorage.setItem('adminName', admin.name);
+                sessionStorage.setItem('adminEmail', admin.email);
+                sessionStorage.setItem('adminId', admin.id);
+                sessionStorage.setItem('countryCode', admin.countryCode);
+                sessionStorage.setItem('currencyCode', admin.currencyCode);
+
                 let count = 2
                 Swal.fire({
                     icon: 'success',
-                    title: `Welcome back!`,
+                    title: `Welcome back, ${admin.name}!`,
                     html: `Login successful. Redirecting to Dashboard in <strong>${count}</strong> seconds...`,
                     showConfirmButton: false,
                     allowOutsideClick: false,
@@ -123,7 +136,7 @@ export default function Login() {
                 })
                 setTimeout(() => {
                     navigate("/dashboard");
-                }, 3100)
+                }, 2100)
             }).catch((err) => {
                 setSubmitLoading(false)
                 let errMessage = err.response.data.message;
@@ -137,9 +150,6 @@ export default function Login() {
             ? 'border-red-500 focus:ring-red-200 bg-red-50'
             : 'border-gray-300 focus:ring-blue-200 focus:border-blue-500'
         }`
-
-    const getSelectClassName = () =>
-        `w-full px-4 py-3 pl-12 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition-all duration-200 appearance-none bg-white`
 
     return (
         <>
@@ -255,22 +265,31 @@ export default function Login() {
                             </motion.button>
                         </motion.div>
 
-                        <motion.button
-                            type="submit"
-                            disabled={!isFormValid}
-                            variants={itemVariants}
-                            whileHover={isFormValid ? { scale: 1.02 } : {}}
-                            whileTap={isFormValid ? { scale: 0.98 } : {}}
-                            className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${isFormValid
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500'
-                                : 'bg-gray-400 cursor-not-allowed'
-                                }`}
-                        >
-                            <div className="flex items-center justify-center space-x-2">
-                                <FaSignInAlt className="h-5 w-5" />
-                                <span>Login In</span>
-                            </div>
-                        </motion.button>
+                        {/* Submit Button */}
+                        {
+                            submitLoading ? <button
+                                type="button"
+                                disabled={true}
+                                className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500 transform hover:scale-[1.02]`}
+                            >
+                                <div className="flex items-center justify-center">
+                                    <LoaderIcon className="h-5 w-5 animate-spin" />
+                                </div>
+                            </button>
+                                : <button
+                                    type="submit"
+                                    disabled={!isFormValid}
+                                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ${isFormValid
+                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:ring-blue-500 transform hover:scale-[1.02]'
+                                        : 'bg-gray-400 cursor-not-allowed'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-center space-x-2">
+                                        <FaCheckCircle className="h-5 w-5" />
+                                        <span>Login</span>
+                                    </div>
+                                </button>
+                        }
                     </form>
 
                 </motion.div>

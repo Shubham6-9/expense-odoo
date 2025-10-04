@@ -159,7 +159,7 @@ export default function CreateUser({ loginRedirect }) {
             role: userData.role
         }
 
-        await axios.post(`${baseUrl}/api/auth/signup`, data, {
+        await axios.post(`${baseUrl}/api/auth/admin/signup`, data, {
             headers: {
                 'Content-Type': 'application/json'
             }
