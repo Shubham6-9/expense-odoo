@@ -5,7 +5,11 @@ import morgan from "morgan";
 import helmet from "helmet";
 import connectDB from "./config/db.js";
 
-import routes from "./routes/auth.routes.js";
+// Import routes
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import approvalRuleRoutes from "./routes/approval.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 // import expenseRoutes from "./routes/expense.routes.js";
 
 dotenv.config();
@@ -21,8 +25,10 @@ app.use(helmet());
 connectDB();
 
 // Routes
-app.use("/api/auth", routes);
-app.use("/api/user", routes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/approval-rules", approvalRuleRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 // app.use("/api/expenses", expenseRoutes);
 
 const PORT = process.env.PORT || 5000;
